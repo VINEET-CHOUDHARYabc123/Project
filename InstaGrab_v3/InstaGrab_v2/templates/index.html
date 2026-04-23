@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InstaGrab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#08080e;--card:#111118;--card2:#18181f;--border:rgba(255,255,255,0.07);
+  --g1:#f77737;--g2:#e1306c;--g3:#833ab4;
+  --text:#eeeef5;--muted:#6b6b88;--ok:#1fd8a0;--err:#ff4d6d;--r:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+
+.orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.15;animation:drift 16s ease-in-out infinite alternate}
+.o1{width:520px;height:520px;background:radial-gradient(circle,#e1306c,transparent);top:-180px;left:-180px;animation-duration:20s}
+.o2{width:420px;height:420px;background:radial-gradient(circle,#833ab4,transparent);bottom:-100px;right:-80px;animation-duration:15s;animation-delay:-6s}
+.o3{width:300px;height:300px;background:radial-gradient(circle,#f77737,transparent);top:45%;left:55%;animation-duration:22s;animation-delay:-12s}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(28px,18px) scale(1.06)}}
+
+main{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:56px 18px 100px}
+
+/* Logo */
+.logo{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:44px;animation:up .7s ease both}
+.logo-mark{width:68px;height:68px;border-radius:20px;background:linear-gradient(135deg,var(--g1),var(--g2),var(--g3));display:flex;align-items:center;justify-content:center;box-shadow:0 0 50px rgba(225,48,108,.35);animation:glow 3s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(225,48,108,.28)}50%{box-shadow:0 0 65px rgba(225,48,108,.55)}}
+.logo-mark svg{width:34px;height:34px;fill:#fff}
+.logo-name{font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px}
+.logo-sub{font-size:.85rem;color:var(--muted);font-weight:300;margin-top:-5px}
+
+/* Card */
+.card{width:100%;max-width:600px;background:var(--card);border:1px solid var(--border);border-radius:22px;padding:32px 32px 28px;position:relative;overflow:hidden;animation:up .7s ease .12s both}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));opacity:.7}
+
+/* Modes */
+.modes{display:flex;gap:7px;margin-bottom:20px;flex-wrap:wrap}
+.mode{padding:8px 15px;background:var(--card2);border:1px solid var(--border);border-radius:30px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.mode:hover{border-color:rgba(225,48,108,.3);color:var(--text)}
+.mode.active{background:linear-gradient(135deg,rgba(225,48,108,.18),rgba(131,58,180,.18));border-color:rgba(225,48,108,.55);color:var(--text)}
+.mode svg{width:14px;height:14px;flex-shrink:0}
+
+/* Input */
+.input-row{display:flex;gap:10px;margin-bottom:10px}
+.inp-wrap{position:relative;flex:1}
+.inp-wrap input{width:100%;padding:15px 44px 15px 16px;background:var(--card2);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.93rem;outline:none;transition:border-color .25s,box-shadow .25s}
+.inp-wrap input::placeholder{color:var(--muted)}
+.inp-wrap input:focus{border-color:rgba(225,48,108,.6);box-shadow:0 0 0 3px rgba(225,48,108,.1)}
+.inp-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);transition:color .2s;display:none;padding:4px}
+.inp-clear:hover{color:var(--text)}
+.inp-clear svg{width:15px;height:15px;display:block}
+
+.hint{font-size:.76rem;color:var(--muted);margin-bottom:14px;min-height:16px}
+
+/* Grab button */
+.btn-grab{padding:15px 22px;background:linear-gradient(135deg,var(--g1),var(--g2),var(--g3));border:none;border-radius:var(--r);color:#fff;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 6px 28px rgba(225,48,108,.3);transition:transform .15s,box-shadow .3s;display:flex;align-items:center;gap:8px}
+.btn-grab:hover{transform:translateY(-1px);box-shadow:0 8px 38px rgba(225,48,108,.5)}
+.btn-grab:active{transform:translateY(0)}
+.btn-grab:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Status */
+.status{margin-top:20px;display:none}
+
+/* Progress */
+.prog{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:12px}
+.prog-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.prog-lbl{font-size:.88rem;font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--g2);box-shadow:0 0 8px var(--g2);animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-radius:2px;animation:slide 1.5s ease-in-out infinite;width:35%}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(380%)}}
+
+/* Result */
+.result{background:var(--card2);border:1px solid rgba(31,216,160,.2);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px}
+.result-meta{display:flex;align-items:center;gap:12px}
+.thumb-box{width:58px;height:58px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,rgba(225,48,108,.2),rgba(131,58,180,.2));display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb-box img{width:100%;height:100%;object-fit:cover}
+.thumb-box svg{width:26px;height:26px;opacity:.55;fill:var(--muted)}
+.result-info{flex:1;min-width:0}
+.result-title{font-weight:500;font-size:.93rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;background:rgba(31,216,160,.12);color:var(--ok);font-size:.76rem;font-weight:500;margin-top:5px}
+.badge svg{width:11px;height:11px}
+
+.file-list{display:flex;flex-direction:column;gap:8px}
+.file-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px}
+.file-name{font-size:.83rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.file-ext{font-size:.72rem;padding:2px 7px;border-radius:4px;background:rgba(225,48,108,.12);color:var(--g2);font-weight:600;flex-shrink:0;text-transform:uppercase}
+.btn-save{padding:8px 14px;background:rgba(31,216,160,.1);border:1.5px solid rgba(31,216,160,.28);border-radius:8px;color:var(--ok);font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.btn-save:hover{background:rgba(31,216,160,.18);border-color:rgba(31,216,160,.5)}
+.btn-save svg{width:13px;height:13px}
+
+/* Error */
+.err-box{background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.24);border-radius:12px;padding:14px 16px;color:var(--err);font-size:.88rem;display:flex;align-items:flex-start;gap:10px}
+.err-box svg{flex-shrink:0;margin-top:2px;fill:var(--err)}
+
+/* ── Login panel (slides in when private) ─────── */
+.login-panel{
+  background:var(--card2);
+  border:1.5px solid rgba(225,48,108,.35);
+  border-radius:var(--r);padding:20px;
+  display:flex;flex-direction:column;gap:14px;
+  animation:up .35s ease both
+}
+.login-header{display:flex;align-items:center;gap:10px}
+.login-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(225,48,108,.2),rgba(131,58,180,.2));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.login-icon svg{width:18px;height:18px;fill:var(--g2)}
+.login-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem}
+.login-reason{font-size:.8rem;color:var(--muted);margin-top:2px}
+.login-fields{display:flex;flex-direction:column;gap:10px}
+.login-fields input{width:100%;padding:13px 16px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s}
+.login-fields input::placeholder{color:var(--muted)}
+.login-fields input:focus{border-color:rgba(225,48,108,.5)}
+.login-actions{display:flex;gap:10px}
+.btn-login{flex:1;padding:13px;background:linear-gradient(135deg,var(--g2),var(--g3));border:none;border-radius:var(--r);color:#fff;font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-login:hover{opacity:.85}
+.btn-login:disabled{opacity:.45;cursor:not-allowed}
+.btn-skip{padding:13px 16px;background:none;border:1.5px solid var(--border);border-radius:var(--r);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s}
+.btn-skip:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+
+/* Chips */
+.chips-section{width:100%;max-width:600px;margin-top:22px;animation:up .7s ease .28s both}
+.chips-label{font-size:.74rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:5px 13px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:.79rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.chip-dot{width:5px;height:5px;border-radius:50%;background:linear-gradient(135deg,var(--g2),var(--g3))}
+
+.note{width:100%;max-width:600px;margin-top:14px;font-size:.77rem;color:var(--muted);text-align:center;line-height:1.65;animation:up .7s ease .36s both}
+
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:480px){
+  .card{padding:22px 16px}
+  .logo-name{font-size:2rem}
+  .input-row{flex-direction:column}
+  .btn-grab{width:100%;justify-content:center}
+  .modes{gap:5px}
+  .mode{font-size:.77rem;padding:7px 12px}
+  .login-actions{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="orbs">
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+</div>
+<main>
+
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    </div>
+    <div class="logo-name">InstaGrab</div>
+    <div class="logo-sub">Photos · Videos · Reels · Stories · Profile Pics</div>
+  </div>
+
+  <div class="card">
+
+    <div class="modes">
+      <button class="mode active" data-type="video" onclick="setMode(this,'video')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+        Video / Reel
+      </button>
+      <button class="mode" data-type="photo" onclick="setMode(this,'photo')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+        Photo / Post
+      </button>
+      <button class="mode" data-type="story" onclick="setMode(this,'story')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        Story
+      </button>
+      <button class="mode" data-type="audio" onclick="setMode(this,'audio')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        Audio MP3
+      </button>
+      <button class="mode" data-type="profile" onclick="setMode(this,'profile')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        Profile Pic
+      </button>
+    </div>
+
+    <div class="input-row">
+      <div class="inp-wrap">
+        <input type="text" id="urlInput" placeholder="Paste URL or @username…" oninput="onInput(this)" onpaste="onPaste()"/>
+        <button class="inp-clear" id="clearBtn" onclick="clearAll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <button class="btn-grab" id="dlBtn" onclick="startDownload(null, null)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Grab
+      </button>
+    </div>
+
+    <div class="hint" id="hintText"></div>
+
+    <div class="status" id="statusArea">
+
+      <!-- Progress -->
+      <div class="prog" id="progWrap" style="display:none">
+        <div class="prog-top">
+          <span class="prog-lbl" id="progLbl">Fetching…</span>
+          <span class="dot"></span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill"></div></div>
+      </div>
+
+      <!-- Login panel — shown when private/restricted -->
+      <div class="login-panel" id="loginPanel" style="display:none">
+        <div class="login-header">
+          <div class="login-icon">
+            <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          </div>
+          <div>
+            <div class="login-title">Login Required</div>
+            <div class="login-reason" id="loginReason">This content requires an Instagram account.</div>
+          </div>
+        </div>
+        <div class="login-fields">
+          <input type="email" id="igUser" placeholder="Instagram email or username"/>
+          <input type="password" id="igPass" placeholder="Password"/>
+        </div>
+        <div class="login-actions">
+          <button class="btn-login" id="loginBtn" onclick="retryWithLogin()">
+            <span id="loginBtnText">Login & Download</span>
+          </button>
+          <button class="btn-skip" onclick="dismissLogin()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="result" id="resultCard" style="display:none">
+        <div class="result-meta">
+          <div class="thumb-box" id="thumbBox">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </div>
+          <div class="result-info">
+            <div class="result-title" id="resultTitle">Ready</div>
+            <div class="badge">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span id="badgeText">Ready to save</span>
+            </div>
+          </div>
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </div>
+
+      <!-- Error -->
+      <div class="err-box" id="errBox" style="display:none">
+        <svg width="17" height="17" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <span id="errMsg">Something went wrong.</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="chips-section">
+    <div class="chips-label">Supported</div>
+    <div class="chips">
+      <div class="chip"><span class="chip-dot"></span>Photos &amp; Carousels</div>
+      <div class="chip"><span class="chip-dot"></span>Videos &amp; Reels</div>
+      <div class="chip"><span class="chip-dot"></span>IGTV</div>
+      <div class="chip"><span class="chip-dot"></span>Stories</div>
+      <div class="chip"><span class="chip-dot"></span>Profile Pic / DP</div>
+      <div class="chip"><span class="chip-dot"></span>Audio MP3</div>
+      <div class="chip"><span class="chip-dot"></span>Private (with login)</div>
+    </div>
+  </div>
+
+  <p class="note">Public content downloads without login · Private/restricted content will ask for credentials</p>
+
+</main>
+<script>
+let mode = "video";
+let jobId = null;
+let timer = null;
+let pendingUrl = null;
+
+const HINTS = {
+  video:   "Paste a /reel/, /p/, or /tv/ URL",
+  photo:   "Paste a /p/ post URL — all carousel images downloaded",
+  story:   "Paste a /stories/ URL",
+  audio:   "Any post URL — audio extracted as MP3",
+  profile: "Paste profile URL or type @username"
+};
+
+function setMode(btn, type) {
+  document.querySelectorAll(".mode").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  mode = type;
+  document.getElementById("hintText").textContent = HINTS[type] || "";
+}
+
+function onInput(el) {
+  document.getElementById("clearBtn").style.display = el.value ? "block" : "none";
+}
+function onPaste() { setTimeout(() => onInput(document.getElementById("urlInput")), 50); }
+
+function clearAll() {
+  document.getElementById("urlInput").value = "";
+  document.getElementById("clearBtn").style.display = "none";
+  hideAll();
+  document.getElementById("urlInput").focus();
+}
+
+function hideAll() {
+  document.getElementById("statusArea").style.display = "none";
+  ["progWrap","loginPanel","resultCard","errBox"].forEach(id =>
+    document.getElementById(id).style.display = "none"
+  );
+}
+
+function showProg(lbl) {
+  document.getElementById("statusArea").style.display = "block";
+  document.getElementById("progWrap").style.display = "block";
+  document.getElementById("loginPanel").style.display = "none";
+  document.getElementById("resultCard").style.display = "none";
+  document.getElementById("errBox").style.display = "none";
+  document.getElementById("progLbl").textContent = lbl || "Fetching…";
+}
+
+function showLoginPanel(reason) {
+  document.getElementById("progWrap").style.display = "none";
+  document.getElementById("resultCard").style.display = "none";
+  document.getElementById("errBox").style.display = "none";
+  document.getElementById("loginPanel").style.display = "flex";
+  document.getElementById("loginReason").textContent = reason || "This content requires login.";
+  document.getElementById("statusArea").style.display = "block";
+  document.getElementById("igUser").focus();
+}
+
+function showResult(job) {
+  document.getElementById("progWrap").style.display = "none";
+  document.getElementById("loginPanel").style.display = "none";
+  document.getElementById("resultCard").style.display = "flex";
+
+  document.getElementById("resultTitle").textContent = job.title || "Instagram Media";
+  const files = job.files || [];
+  document.getElementById("badgeText").textContent =
+    files.length > 1 ? `${files.length} files ready` : "Ready to save";
+
+  if (job.thumbnail) {
+    document.getElementById("thumbBox").innerHTML =
+      `<img src="${job.thumbnail}" onerror="this.style.display='none'"/>`;
+  }
+
+  const fl = document.getElementById("fileList");
+  fl.innerHTML = "";
+  files.forEach(f => {
+    const ext = f.filename.split(".").pop().toUpperCase();
+    fl.innerHTML += `
+      <div class="file-item">
+        <span class="file-name">${f.label}</span>
+        <span class="file-ext">${ext}</span>
+        <button class="btn-save" onclick="saveFile('${f.filename}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Save
+        </button>
+      </div>`;
+  });
+}
+
+function showErr(msg) {
+  document.getElementById("progWrap").style.display = "none";
+  document.getElementById("loginPanel").style.display = "none";
+  document.getElementById("resultCard").style.display = "none";
+  document.getElementById("errBox").style.display = "flex";
+  document.getElementById("errMsg").textContent = msg;
+}
+
+async function startDownload(igUser, igPass) {
+  const url = document.getElementById("urlInput").value.trim();
+  if (!url) { document.getElementById("urlInput").focus(); return; }
+
+  pendingUrl = url;
+  const btn = document.getElementById("dlBtn");
+  btn.disabled = true;
+  if (timer) clearInterval(timer);
+  hideAll();
+  showProg("Connecting…");
+
+  try {
+    const body = { url, type: mode };
+    if (igUser) body.username = igUser;
+    if (igPass) body.password = igPass;
+
+    const res = await fetch("/api/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      showErr(data.error || "Failed.");
+      btn.disabled = false;
+      return;
+    }
+    jobId = data.job_id;
+    showProg("Downloading…");
+    pollStatus();
+  } catch(e) {
+    showErr("Could not reach server. Is Flask running?");
+    btn.disabled = false;
+  }
+}
+
+function pollStatus() {
+  timer = setInterval(async () => {
+    if (!jobId) return;
+    try {
+      const res = await fetch(`/api/status/${jobId}`);
+      const job = await res.json();
+
+      if (job.status === "done") {
+        clearInterval(timer);
+        showResult(job);
+        document.getElementById("dlBtn").disabled = false;
+
+      } else if (job.status === "need_login") {
+        clearInterval(timer);
+        document.getElementById("dlBtn").disabled = false;
+        showLoginPanel(job.reason);
+
+      } else if (job.status === "error") {
+        clearInterval(timer);
+        showErr(job.error || "An error occurred.");
+        document.getElementById("dlBtn").disabled = false;
+
+      } else {
+        const lbl = { queued: "Queued…", downloading: "Downloading…" };
+        document.getElementById("progLbl").textContent = lbl[job.status] || "Processing…";
+      }
+    } catch {}
+  }, 1500);
+}
+
+function retryWithLogin() {
+  const user = document.getElementById("igUser").value.trim();
+  const pass = document.getElementById("igPass").value.trim();
+  if (!user || !pass) {
+    document.getElementById("igUser").focus();
+    return;
+  }
+  document.getElementById("loginBtn").disabled = true;
+  document.getElementById("loginBtnText").textContent = "Logging in…";
+  document.getElementById("loginPanel").style.display = "none";
+  showProg("Logging in & downloading…");
+  startDownload(user, pass);
+}
+
+function dismissLogin() {
+  hideAll();
+  document.getElementById("dlBtn").disabled = false;
+}
+
+function saveFile(filename) {
+  if (!jobId) return;
+  window.location.href = `/api/file/${jobId}/${filename}`;
+}
+
+document.getElementById("hintText").textContent = HINTS[mode];
+
+// Allow Enter key in login fields
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && document.getElementById("loginPanel").style.display !== "none") {
+    retryWithLogin();
+  }
+});
+</script>
+</body>
+</html>
